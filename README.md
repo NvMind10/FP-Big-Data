@@ -94,7 +94,7 @@ python spark_pipeline.py
 cd frontend
 pip install streamlit pandas numpy matplotlib rich
 
-streamlit run app_dashboard.py        # dashboard web
+python -m streamlit run app_dashboard.py        # dashboard web
 python app_cli.py                     # CLI monitor (mock data)
 ```
 
