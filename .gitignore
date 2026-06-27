@@ -1,0 +1,29 @@
+# Kredensial -- JANGAN PERNAH commit file ini
+.env
+
+# Model AI (terlalu besar untuk Git, download manual dari Google Drive)
+ml-nlp/scamshield_model_final/
+big-data-processing/scamshield_model_final/
+model/
+
+# Sesi Telegram (Telethon) -- berisi token login, jangan dibagikan
+*.session
+*.session-journal
+
+# Checkpoint Spark Structured Streaming
+chkpt/
+**/chkpt/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / Editor
+.DS_Store
+.vscode/
