@@ -3,6 +3,11 @@ import pyspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json, udf
 from pyspark.sql.types import StructType, StructField, StringType
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+
+console = Console()
 
 from pymongo import MongoClient
 from datetime import datetime
@@ -162,50 +167,79 @@ console_output = (
     .start()
 )
 
+# Tempelkan fungsi ini tepat di atas fungsi write_to_mongodb milik Huda
+
+def tampilkan_log_scamshield(waktu, pengirim, grup, teks, status):
+    # Menentukan skema warna berdasarkan hasil prediksi AI
+    if "SCAM" in status:
+        warna_status = "bold red"
+        badge = "[📊 SCAM DETECTED]"
+        border_color = "red"
+    else:
+        warna_status = "bold green"
+        badge = "[✅ SAFE MESSAGE]"
+        border_color = "green"
+        
+    # Menyusun konten teks log di terminal
+    konten = Text()
+    konten.append(f"🕒 Waktu   : {waktu}\n", style="cyan")
+    konten.append(f"👤 Pengirim: {pengirim}\n", style="yellow")
+    konten.append(f"👥 Grup    : {grup}\n", style="magenta")
+    konten.append(f"💬 Pesan   : \"{teks}\"\n\n", style="white")
+    konten.append(f"🔬 Status Validation: ", style="bold white")
+    konten.append(f"{status}", style=warna_status)
+    
+    # Cetak log menggunakan komponen Panel Box dari Rich Library
+    console.print(
+        Panel(
+            konten,
+            title=f"[bold white]{badge}[/bold white]",
+            expand=False,
+            border_style=border_color
+        )
+    )
+
 # =========================================================
 # MONGODB WRITER
 # =========================================================
 
 def write_to_mongodb(batch_df, batch_id):
-
     rows = batch_df.collect()
-
     if len(rows) == 0:
         return
 
     client = MongoClient(MONGO_URI)
-
     db = client["scamshield"]
-
     collection = db["telegram_logs"]
-
     docs = []
 
+    # Ambil penanda waktu saat ini untuk log terminal
+    waktu_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     for row in rows:
+        # 1. TAMPILKAN LOG VISUAL WARNA-WARNI ANDA DI SINI (KODE KAMU BERAKSI):
+        tampilkan_log_scamshield(
+            waktu=waktu_sekarang,
+            pengirim=row["sender"],
+            grup="Telegram Public Group",
+            teks=row["text"],
+            status=row["status_ai"]
+        )
 
+        # 2. Pembentukan dokumen MongoDB bawaan kelompok (tetap biarkan seperti aslinya)
         docs.append({
-
             "timestamp": datetime.now().isoformat(),
-
             "sender": row["sender"],
-
             "group": "telegram_group",
-
             "message_type": "text",
-
             "message_text": row["text"],
-
             "status_ai": row["status_ai"],
-
             "confidence_score": None,
-
             "source": "spark_stream"
         })
 
     collection.insert_many(docs)
-
-    print(f"✅ Batch {batch_id}")
-    print(f"📦 Inserted {len(docs)} docs")
+    print(f"✅ Batch {batch_id} - Successfully Synced to Cloud MongoDB & CLI Stream")
 
 # =========================================================
 # STREAM -> MONGODB
